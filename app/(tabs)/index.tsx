@@ -10,13 +10,9 @@ import {
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../hooks/useAuth';
+import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
-
-interface DashboardScreenProps {
-  navigation: any;
-}
 
 const features = [
   {
@@ -50,7 +46,6 @@ const features = [
   },
 ];
 
-// Inspirational quotes to display randomly
 const inspirationalQuotes = [
   {
     quote: "You don't have to control your thoughts. You just have to stop letting them control you.",
@@ -74,8 +69,7 @@ const inspirationalQuotes = [
   }
 ];
 
-export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
-  const { user, userProfile, signOut } = useAuth();
+export default function DashboardScreen() {
   const [quote, setQuote] = useState(inspirationalQuotes[0]);
   const [streaks, setStreaks] = useState({
     mindfulness: 3,
@@ -88,13 +82,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
   const [breathingActive, setBreathingActive] = useState(false);
 
   useEffect(() => {
-    // Set a random quote
     setQuote(inspirationalQuotes[Math.floor(Math.random() * inspirationalQuotes.length)]);
-    
-    // In a real app, fetch streaks from API
   }, []);
 
-  // Breathing exercise animation
   useEffect(() => {
     if (!breathingActive) return;
     
@@ -106,25 +96,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
       counter++;
       
       if (phase === 'inhale' && counter <= 4) {
-        // Inhale for 4 seconds - circle grows
         setBreathingSize(prev => Math.min(prev + 10, 120));
       } else if (phase === 'inhale' && counter > 4) {
-        // Transition to hold
         phase = 'hold';
         counter = 0;
         setBreathingState('hold');
       } else if (phase === 'hold' && counter <= 3) {
-        // Hold for 3 seconds - circle stays same size
+        // Hold for 3 seconds
       } else if (phase === 'hold' && counter > 3) {
-        // Transition to exhale
         phase = 'exhale';
         counter = 0;
         setBreathingState('exhale');
       } else if (phase === 'exhale' && counter <= 4) {
-        // Exhale for 4 seconds - circle shrinks
         setBreathingSize(prev => Math.max(prev - 10, 60));
       } else if (phase === 'exhale' && counter > 4) {
-        // Transition back to inhale
         phase = 'inhale';
         counter = 0;
         setBreathingState('inhale');
@@ -146,28 +131,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
   const handleFeatureClick = (featureId: string) => {
     switch (featureId) {
       case 'ai-companion':
-        navigation.navigate('AICompanion');
+        router.push('/ai-companion');
         break;
       case 'peer-support':
-        navigation.navigate('PeerSupport');
+        router.push('/peer-support');
         break;
       case 'therapy':
         Alert.alert('Coming Soon', 'Professional therapy features will be available in the next update.');
         break;
       case 'mindfulness':
-        navigation.navigate('Mindfulness');
+        router.push('/mindfulness');
         break;
       default:
         break;
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigation.navigate('Welcome');
-    } catch (error) {
-      console.error('Error signing out:', error);
     }
   };
 
@@ -182,49 +158,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
           <View style={styles.header}>
             <View>
               <Text style={styles.appTitle}>Happistaa</Text>
-              <Text style={styles.welcomeText}>
-                Welcome{userProfile?.name ? `, ${userProfile.name}` : ''}
-              </Text>
+              <Text style={styles.welcomeText}>Welcome back</Text>
             </View>
-            {user ? (
-              <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-                <Text style={styles.logoutText}>Logout</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity 
-                onPress={() => navigation.navigate('Login')} 
-                style={styles.loginButton}
-              >
-                <Text style={styles.loginText}>Login</Text>
-              </TouchableOpacity>
-            )}
           </View>
 
           {/* Progress Section */}
           <View style={styles.gridContainer}>
             {/* Progress Card */}
             <View style={styles.progressCard}>
-              {user ? (
-                <>
-                  <Text style={styles.cardTitle}>People Supported</Text>
-                  <View style={styles.progressCircleContainer}>
-                    <View style={styles.progressCircle}>
-                      <Text style={styles.progressNumber}>{userProfile?.supportType === 'support-giver' ? 5 : 0}</Text>
-                    </View>
-                  </View>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.cardTitle}>Start now</Text>
-                  <Text style={styles.cardText}>Take the first step towards a happier you.</Text>
-                  <TouchableOpacity 
-                    style={styles.startButton}
-                    onPress={() => navigation.navigate('SignUp')}
-                  >
-                    <Text style={styles.startButtonText}>Start</Text>
-                  </TouchableOpacity>
-                </>
-              )}
+              <Text style={styles.cardTitle}>People Supported</Text>
+              <View style={styles.progressCircleContainer}>
+                <View style={styles.progressCircle}>
+                  <Text style={styles.progressNumber}>5</Text>
+                </View>
+              </View>
             </View>
 
             {/* Quick Breathing Exercise Card */}
@@ -278,7 +225,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
       </LinearGradient>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -307,29 +254,6 @@ const styles = StyleSheet.create({
     color: '#4A5568',
     marginTop: 4,
   },
-  logoutButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E53E3E',
-  },
-  logoutText: {
-    color: '#E53E3E',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  loginButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#1E3A5F',
-  },
-  loginText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
   gridContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -354,23 +278,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2D3748',
     marginBottom: 12,
-  },
-  cardText: {
-    fontSize: 14,
-    color: '#4A5568',
-    marginBottom: 16,
-  },
-  startButton: {
-    backgroundColor: '#1E3A5F',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-  },
-  startButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
   },
   progressCircleContainer: {
     alignItems: 'center',
@@ -411,7 +318,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
-    transition: 'all 1s ease',
   },
   breathingText: {
     color: '#FFFFFF',

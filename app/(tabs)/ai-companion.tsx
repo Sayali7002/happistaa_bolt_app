@@ -13,16 +13,14 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
+import { ArrowLeft } from 'lucide-react-native';
+import { router } from 'expo-router';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-}
-
-interface AICompanionScreenProps {
-  navigation: any;
 }
 
 const quickResponses = [
@@ -33,7 +31,7 @@ const quickResponses = [
   "I am feeling lonely"
 ];
 
-export const AICompanionScreen: React.FC<AICompanionScreenProps> = ({ navigation }) => {
+export default function AICompanionScreen() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -48,7 +46,6 @@ export const AICompanionScreen: React.FC<AICompanionScreenProps> = ({ navigation
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    // Scroll to bottom when new messages are added
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
@@ -69,7 +66,6 @@ export const AICompanionScreen: React.FC<AICompanionScreenProps> = ({ navigation
     setIsLoading(true);
 
     try {
-      // Simulate AI response (in a real app, this would call your AI API)
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const aiResponse: Message = {
@@ -81,8 +77,7 @@ export const AICompanionScreen: React.FC<AICompanionScreenProps> = ({ navigation
 
       setMessages(prev => [...prev, aiResponse]);
       
-      // Speak the AI response
-      if (aiResponse.content) {
+      if (Platform.OS !== 'web' && aiResponse.content) {
         speakText(aiResponse.content);
       }
     } catch (error) {
@@ -94,7 +89,6 @@ export const AICompanionScreen: React.FC<AICompanionScreenProps> = ({ navigation
   };
 
   const generateAIResponse = (userMessage: string): string => {
-    // Simple response generation (in a real app, this would use your AI service)
     const responses = [
       "I hear you, and I want you to know that your feelings are valid. Can you tell me more about what's been on your mind?",
       "Thank you for sharing that with me. It takes courage to express how you're feeling. What would help you feel better right now?",
@@ -107,6 +101,8 @@ export const AICompanionScreen: React.FC<AICompanionScreenProps> = ({ navigation
   };
 
   const speakText = async (text: string) => {
+    if (Platform.OS === 'web') return;
+    
     try {
       setIsSpeaking(true);
       await Speech.speak(text, {
@@ -123,7 +119,9 @@ export const AICompanionScreen: React.FC<AICompanionScreenProps> = ({ navigation
   };
 
   const stopSpeaking = () => {
-    Speech.stop();
+    if (Platform.OS !== 'web') {
+      Speech.stop();
+    }
     setIsSpeaking(false);
   };
 
@@ -139,8 +137,8 @@ export const AICompanionScreen: React.FC<AICompanionScreenProps> = ({ navigation
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>← Back</Text>
+          <TouchableOpacity onPress={() => router.back()}>
+            <ArrowLeft size={24} color="#1E3A5F" />
           </TouchableOpacity>
           <Text style={styles.title}>AI Companion</Text>
           <TouchableOpacity onPress={isSpeaking ? stopSpeaking : undefined}>
@@ -234,7 +232,7 @@ export const AICompanionScreen: React.FC<AICompanionScreenProps> = ({ navigation
       </LinearGradient>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -258,11 +256,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-  },
-  backButton: {
-    fontSize: 16,
-    color: '#1E3A5F',
-    fontWeight: '600',
   },
   title: {
     fontSize: 18,
