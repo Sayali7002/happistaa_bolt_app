@@ -1,7 +1,7 @@
 {
   "name": "happistaa-mobile",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
     "dev": "expo start",
@@ -21,7 +21,6 @@
     "expo-secure-store": "~12.3.1",
     "expo-speech": "~11.3.0",
     "expo-status-bar": "~1.6.0",
-    "expo-router": "^3.5.23",
     "react": "18.2.0",
     "react-native": "0.72.6",
     "react-native-gesture-handler": "~2.12.0",

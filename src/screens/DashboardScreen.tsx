@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,16 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAuth } from '../hooks/useAuth';
 
 const { width } = Dimensions.get('window');
+
+interface DashboardScreenProps {
+  navigation: any;
+}
 
 const features = [
   {
@@ -44,6 +50,7 @@ const features = [
   },
 ];
 
+// Inspirational quotes to display randomly
 const inspirationalQuotes = [
   {
     quote: "You don't have to control your thoughts. You just have to stop letting them control you.",
@@ -67,24 +74,101 @@ const inspirationalQuotes = [
   }
 ];
 
-export default function DashboardScreen() {
-  const [quote] = React.useState(inspirationalQuotes[Math.floor(Math.random() * inspirationalQuotes.length)]);
-  const [streaks] = React.useState({
+export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
+  const { user, userProfile, signOut } = useAuth();
+  const [quote, setQuote] = useState(inspirationalQuotes[0]);
+  const [streaks, setStreaks] = useState({
     mindfulness: 3,
     peerSupport: 1,
     aiCompanion: 5
   });
-  const [overallStreak] = React.useState(7);
-  const [breathingSize, setBreathingSize] = React.useState(60);
-  const [breathingActive, setBreathingActive] = React.useState(false);
+  const [overallStreak, setOverallStreak] = useState(7);
+  const [breathingSize, setBreathingSize] = useState(60);
+  const [breathingState, setBreathingState] = useState<'inhale' | 'hold' | 'exhale'>('inhale');
+  const [breathingActive, setBreathingActive] = useState(false);
+
+  useEffect(() => {
+    // Set a random quote
+    setQuote(inspirationalQuotes[Math.floor(Math.random() * inspirationalQuotes.length)]);
+    
+    // In a real app, fetch streaks from API
+  }, []);
+
+  // Breathing exercise animation
+  useEffect(() => {
+    if (!breathingActive) return;
+    
+    let breathingInterval: NodeJS.Timeout;
+    let phase = 'inhale';
+    let counter = 0;
+    
+    breathingInterval = setInterval(() => {
+      counter++;
+      
+      if (phase === 'inhale' && counter <= 4) {
+        // Inhale for 4 seconds - circle grows
+        setBreathingSize(prev => Math.min(prev + 10, 120));
+      } else if (phase === 'inhale' && counter > 4) {
+        // Transition to hold
+        phase = 'hold';
+        counter = 0;
+        setBreathingState('hold');
+      } else if (phase === 'hold' && counter <= 3) {
+        // Hold for 3 seconds - circle stays same size
+      } else if (phase === 'hold' && counter > 3) {
+        // Transition to exhale
+        phase = 'exhale';
+        counter = 0;
+        setBreathingState('exhale');
+      } else if (phase === 'exhale' && counter <= 4) {
+        // Exhale for 4 seconds - circle shrinks
+        setBreathingSize(prev => Math.max(prev - 10, 60));
+      } else if (phase === 'exhale' && counter > 4) {
+        // Transition back to inhale
+        phase = 'inhale';
+        counter = 0;
+        setBreathingState('inhale');
+      }
+    }, 1000);
+    
+    return () => {
+      clearInterval(breathingInterval);
+    };
+  }, [breathingActive]);
 
   const toggleBreathingExercise = () => {
     setBreathingActive(!breathingActive);
+    if (!breathingActive) {
+      setBreathingState('inhale');
+    }
   };
 
   const handleFeatureClick = (featureId: string) => {
-    // Navigation will be implemented later
-    console.log('Feature clicked:', featureId);
+    switch (featureId) {
+      case 'ai-companion':
+        navigation.navigate('AICompanion');
+        break;
+      case 'peer-support':
+        navigation.navigate('PeerSupport');
+        break;
+      case 'therapy':
+        Alert.alert('Coming Soon', 'Professional therapy features will be available in the next update.');
+        break;
+      case 'mindfulness':
+        navigation.navigate('Mindfulness');
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigation.navigate('Welcome');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   return (
@@ -98,20 +182,49 @@ export default function DashboardScreen() {
           <View style={styles.header}>
             <View>
               <Text style={styles.appTitle}>Happistaa</Text>
-              <Text style={styles.welcomeText}>Welcome back</Text>
+              <Text style={styles.welcomeText}>
+                Welcome{userProfile?.name ? `, ${userProfile.name}` : ''}
+              </Text>
             </View>
+            {user ? (
+              <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+                <Text style={styles.logoutText}>Logout</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity 
+                onPress={() => navigation.navigate('Login')} 
+                style={styles.loginButton}
+              >
+                <Text style={styles.loginText}>Login</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Progress Section */}
           <View style={styles.gridContainer}>
             {/* Progress Card */}
             <View style={styles.progressCard}>
-              <Text style={styles.cardTitle}>People Supported</Text>
-              <View style={styles.progressCircleContainer}>
-                <View style={styles.progressCircle}>
-                  <Text style={styles.progressNumber}>5</Text>
-                </View>
-              </View>
+              {user ? (
+                <>
+                  <Text style={styles.cardTitle}>People Supported</Text>
+                  <View style={styles.progressCircleContainer}>
+                    <View style={styles.progressCircle}>
+                      <Text style={styles.progressNumber}>{userProfile?.supportType === 'support-giver' ? 5 : 0}</Text>
+                    </View>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.cardTitle}>Start now</Text>
+                  <Text style={styles.cardText}>Take the first step towards a happier you.</Text>
+                  <TouchableOpacity 
+                    style={styles.startButton}
+                    onPress={() => navigation.navigate('SignUp')}
+                  >
+                    <Text style={styles.startButtonText}>Start</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
 
             {/* Quick Breathing Exercise Card */}
@@ -125,7 +238,7 @@ export default function DashboardScreen() {
                 onPress={toggleBreathingExercise}
               >
                 <Text style={styles.breathingText}>
-                  {breathingActive ? 'inhale' : 'Start'}
+                  {breathingActive ? breathingState : 'Start'}
                 </Text>
                 <Text style={styles.breathingIcon}>🧘‍♀️</Text>
               </TouchableOpacity>
@@ -165,7 +278,7 @@ export default function DashboardScreen() {
       </LinearGradient>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -194,6 +307,29 @@ const styles = StyleSheet.create({
     color: '#4A5568',
     marginTop: 4,
   },
+  logoutButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E53E3E',
+  },
+  logoutText: {
+    color: '#E53E3E',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  loginButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#1E3A5F',
+  },
+  loginText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   gridContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -218,6 +354,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2D3748',
     marginBottom: 12,
+  },
+  cardText: {
+    fontSize: 14,
+    color: '#4A5568',
+    marginBottom: 16,
+  },
+  startButton: {
+    backgroundColor: '#1E3A5F',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
+  startButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   progressCircleContainer: {
     alignItems: 'center',
@@ -258,6 +411,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
+    transition: 'all 1s ease',
   },
   breathingText: {
     color: '#FFFFFF',
