@@ -8,13 +8,10 @@ import {
   Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Button } from '../components/common/Button';
+import { router } from 'expo-router';
+import { TouchableOpacity } from 'react-native';
 
 const { width } = Dimensions.get('window');
-
-interface WelcomeScreenProps {
-  navigation: any;
-}
 
 const keyFeatures = [
   { icon: '👥', title: 'Find a Friend', description: 'Match with someone who understands your journey.' },
@@ -29,13 +26,13 @@ const dataPoints = [
   { number: "24/7", label: "Support Available" },
 ];
 
-export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
+export default function WelcomeScreen() {
   const handleGetStarted = () => {
-    navigation.navigate('SupportPreferences');
+    router.push('/onboarding/support-preferences');
   };
 
   const handleSignIn = () => {
-    navigation.navigate('Login');
+    router.push('/auth/login');
   };
 
   return (
@@ -82,26 +79,25 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
 
             {/* Action Buttons */}
             <View style={styles.buttonContainer}>
-              <Button
-                title="Get Started"
-                onPress={handleGetStarted}
-                size="large"
+              <TouchableOpacity
                 style={styles.primaryButton}
-              />
-              <Button
-                title="I already have an account"
-                onPress={handleSignIn}
-                variant="outline"
-                size="large"
+                onPress={handleGetStarted}
+              >
+                <Text style={styles.primaryButtonText}>Get Started</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={styles.secondaryButton}
-              />
+                onPress={handleSignIn}
+              >
+                <Text style={styles.secondaryButtonText}>I already have an account</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
       </LinearGradient>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -219,9 +215,33 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   primaryButton: {
-    width: '100%',
+    backgroundColor: '#1E3A5F',
+    borderRadius: 25,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 56,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
   },
   secondaryButton: {
-    width: '100%',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#1E3A5F',
+    borderRadius: 25,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 56,
+  },
+  secondaryButtonText: {
+    color: '#1E3A5F',
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
